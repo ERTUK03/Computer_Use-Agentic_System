@@ -1,37 +1,51 @@
+import os
 from pydantic_ai.models.openrouter import OpenRouterModel, OpenRouterModelSettings
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 from pydantic_ai import Agent, RunContext, ModelRetry
+from pydantic import BaseModel, field_validator
+from typing import List
 from utils.prompt_loading import load_prompt
-import os
+
+class EvaluatorOutput(BaseModel):
+    success: bool
+    confidence: float
+    score: int
+    goal_completion_reason: str
+    good: List[str]
+    insights: List[str]
+    tips: List[str]
+
+    @field_validator("confidence")
+    @classmethod
+    def confidence_range(cls, v):
+        if not (0.0 <= v <= 1.0):
+            raise ValueError("confidence must be between 0.0 and 1.0")
+        return v
+
+    @field_validator("score")
+    @classmethod
+    def score_range(cls, v):
+        if not (1 <= v <= 10):
+            raise ValueError("score must be between 1 and 10")
+        return v
 
 def get_evaluator():
     model = OpenRouterModel(
         os.getenv("EVALUATOR_MODEL"),
         provider=OpenRouterProvider(api_key=os.getenv("PROVIDER_KEY"))
     )
-
     settings = OpenRouterModelSettings(
         openrouter_reasoning={
-            'effort': os.getenv("REASONING"),
+            "effort": os.getenv("REASONING"),
         }
     )
-    
-    evaluator = Agent(  
+
+    evaluator = Agent(
         model,
         name="evaluator",
-        instructions=(load_prompt("evaluator")),
-        model_settings=settings
+        output_type=EvaluatorOutput,
+        instructions=load_prompt("evaluator"),
+        model_settings=settings,
     )
 
-    @evaluator.output_validator
-    async def validate_sql(ctx: RunContext, output: Output) -> Output:
-        if isinstance(output, InvalidRequest):
-            return output
-        try:
-            output_json = json.loads(output)
-        except json.JSONDecodeError:
-            raise ModelRetry('Response is not a valid JSON.')
-        else:
-            return output_json
-    
     return evaluator
