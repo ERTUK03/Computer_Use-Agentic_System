@@ -1,0 +1,18 @@
+FROM nvidia/cuda:12.4.0-devel-ubuntu22.04
+
+RUN apt-get update && apt-get install -y \
+    git cmake build-essential \
+    libcurl4-openssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --branch mtmd-grounders https://github.com/yuuko-eth/llama.cpp /llama.cpp
+
+WORKDIR /llama.cpp
+
+RUN cmake -B build -DGGML_CUDA=ON -DLLAMA_CURL=ON \
+    -DCMAKE_EXE_LINKER_FLAGS="-lcuda" && \
+    cmake --build build --config Release -j$(nproc) --target llama-server
+
+EXPOSE 8080
+
+ENTRYPOINT ["/llama.cpp/build/bin/llama-server"]

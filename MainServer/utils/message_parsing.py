@@ -50,7 +50,9 @@ def parse_messages(result):
                            event.timestamp)
             
         if(isinstance(event, ModelResponse)):
-            stats["combined_cost"]+=event.provider_details["cost"]
+            cost = (event.provider_details or {}).get("cost")
+            if cost is not None:
+                stats["combined_cost"] += cost
             stats["input_tokens"]+=event.usage.input_tokens
             stats["output_tokens"]+=event.usage.output_tokens
             stats["cache_read_tokens"]+=event.usage.cache_read_tokens

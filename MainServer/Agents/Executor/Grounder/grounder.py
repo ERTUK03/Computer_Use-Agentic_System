@@ -1,17 +1,51 @@
-from pydantic_ai.models.openrouter import OpenRouterModel
-from pydantic_ai.providers.openrouter import OpenRouterProvider
 from pydantic_ai import Agent
 import os
+import re
+from Agents.utils.load_model import load_model
 
-def get_grounder(hooks):
-    model = OpenRouterModel(
-        os.getenv("GROUNDER_MODEL"),
-        provider=OpenRouterProvider(api_key=os.getenv("PROVIDER_KEY"))
-    )
+class GrounderAgent:
+    def __init__(self, agent, reorder_image_first=False):
+        self.agent = agent
+        self.reorder_image_first = reorder_image_first
+
+    def parse_boxes(self, answer: str, image_width: int, image_height: int) -> list[dict]:
+        boxes = []
+        for m in re.finditer(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>", answer):
+            x1, y1, x2, y2 = [int(g) for g in m.groups()]
+            boxes.append({
+                "x1": round(x1 / 1000 * image_width),
+                "y1": round(y1 / 1000 * image_height),
+                "x2": round(x2 / 1000 * image_width),
+                "y2": round(y2 / 1000 * image_height),
+            })
+        return boxes
+
+    async def run(self, messages, image_size=[1920,1080]):
+        if self.reorder_image_first:
+            images = [m for m in messages if not isinstance(m, str)]
+            texts = [m for m in messages if isinstance(m, str)]
+            messages = images + texts
+
+        grounding_agent_result = await self.agent.run(messages)
+
+        if self.reorder_image_first:
+            boxes = self.parse_boxes(grounding_agent_result.output, image_size[0], image_size[1])
+            return boxes
+
+        content = re.sub(r"```json\s*|\s*```", "", grounding_agent_result.output.strip())
     
-    grounder = Agent(  
+        return json.loads(content)
+
+def get_grounder(hooks=None):
+    model = load_model("GROUNDER")
+
+    agent = Agent(
         model,
-        name="grounder", capabilities=[hooks]
+        name="grounder",
+        capabilities=[hooks] if hooks is not None else []
     )
-            
-    return grounder
+
+    return GrounderAgent(
+        agent,
+        reorder_image_first=os.getenv("GROUNDER_SOURCE") == "local"
+    )

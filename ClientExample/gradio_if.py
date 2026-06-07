@@ -37,17 +37,17 @@ with gr.Blocks() as demo:
 
     with gr.Row():
         ws_url = gr.Textbox(
-            value="Server URL",
+            value="URL",
             label="WebSocket URL"
         )
 
         client_id = gr.Textbox(
-            value="User ID",
+            value="USER",
             label="Client ID"
         )
 
     mcp_server = gr.Textbox(
-        value="Execution Server URL",
+        value="SERVER",
         label="MCP Server"
     )
 

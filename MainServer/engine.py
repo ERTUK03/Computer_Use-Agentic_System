@@ -77,80 +77,91 @@ class Engine:
 
         return res_tips, tips
 
-    async def summarize_tips(self, res_tips, tips, evaluation_json):
+    async def summarize_tips(self, res_tips, tips, evaluation):
         for group_num in range(len(tips)):
-            tip_num=0
-            while tip_num<len(tips[group_num]):
-                res_tips[group_num]["tips"][tips[group_num][tip_num]["id"]]["times_used"]+=1
-                if evaluation_json["success"]:
-                     res_tips[group_num]["tips"][tips[group_num][tip_num]["id"]]["successes"]+=1
-                if res_tips[group_num]["tips"][tips[group_num][tip_num]["id"]]["successes"]/res_tips[group_num]["tips"][tips[group_num][tip_num]["id"]]["times_used"]<0.3:
-                    res_tips[group_num]["tips"].pop(tips[group_num][tip_num]["id"])
-                    tip_num-=1
-                
-                tip_num+=1
+            tip_num = 0
+            while tip_num < len(tips[group_num]):
+                tip_id = tips[group_num][tip_num]["id"]
+                tip_data = res_tips[group_num]["tips"][tip_id]
+    
+                tip_data["times_used"] += 1
+                if evaluation.output.success:
+                    tip_data["successes"] += 1
+    
+                if tip_data["successes"] / tip_data["times_used"] < 0.3:
+                    res_tips[group_num]["tips"].pop(tip_id)
+                    tip_num -= 1
+    
+                tip_num += 1
 
-    async def consolidate_tips(self, res_tips, evaluation_json, task):
+    async def consolidate_tips(self, res_tips, evaluation, task):
         if not res_tips:
             self.user_memories.data.insert({
                 "task": task,
-                "tips": [{"tip": tip,"times_used":1,"successes":1} for tip in evaluation_json["tips"]]
+                "tips": [{"tip": tip, "times_used": 1, "successes": 1} for tip in evaluation.output.tips]
             })
-            break
-        
-        group_num=0
-        while group_num<len(res_tips):
-            tip_num=0
-            unique_flag=[]
-            for new_tip in evaluation_json["tips"]:
-                unique_flag.append(True)
-            while tip_num<len(res_tips[group_num]["tips"]):
-                for i, new_tip in enumerate(evaluation_json["tips"]):
+            return
+    
+        group_num = 0
+        while group_num < len(res_tips):
+            tip_num = 0
+            unique_flag = [True] * len(evaluation.output.tips)
+    
+            while tip_num < len(res_tips[group_num]["tips"]):
+                for i, new_tip in enumerate(evaluation.output.tips):
                     v1 = embed(new_tip)
                     v2 = embed(res_tips[group_num]["tips"][tip_num]["tip"])
-                    if(cosine(v1,v2)>self.consolidate_threshold):
-                        unique_flag[i]=False
+                    if cosine(v1, v2) > self.consolidate_threshold:
+                        unique_flag[i] = False
                 if True not in unique_flag:
                     break
-                tip_num+=1
-            for i in range(len(unique_flag)):
-                if(unique_flag[i]):
-                    res_tips[group_num].append(evaluation_json["tips"][i])
-        
+                tip_num += 1
+    
+            for i, is_unique in enumerate(unique_flag):
+                if is_unique:
+                    res_tips[group_num]["tips"].append({
+                        "tip": evaluation.output.tips[i],
+                        "times_used": 1,
+                        "successes": 1
+                    })
+    
             self.user_memories.data.update(
                 uuid=res_tips[group_num]["task_id"],
                 properties={"tips": res_tips[group_num]["tips"]}
             )
     
-            group_num+=1
+            group_num += 1
 
     async def execute(self, task):
-        self.wrap_log=[]
-        
+        self.wrap_log = []
+    
         res_tips, tips = await self.get_tips(task)
-        
+    
         result = await self.executor.run([
             task,
             "Tips: ",
             " ".join([tip["tip"] for tip_group in tips for tip in tip_group])
         ])
-        
-        exec_stats = parse_messages(self.wrap_log)
-
-        evaluation_json = await self.evaluator.run(
-            [f"Task: {task} \n"]+[mes for message in exec_stats["history"] for mes in message["content"]]
+    
+        exec_log = self.wrap_log[:]
+        exec_stats = parse_messages(exec_log)
+    
+        evaluation = await self.evaluator.run(
+            [f"Task: {task} \n"] + [mes for message in exec_stats["history"] for mes in message["content"]]
         )
-
-        eval_stats = parse_messages(self.wrap_log[len(exec_stats):])        
-        
-        await self.summarize_tips(res_tips, tips, evaluation_json)
-        await self.consolidate_tips(res_tips, evaluation_json, task)
-
-        for element in eval_stats:
-            exec_stats[element]+=eval_stats[element]
-            
+    
+        eval_log = self.wrap_log[len(exec_log):] 
+        eval_stats = parse_messages(eval_log)
+    
+        await self.summarize_tips(res_tips, tips, evaluation)
+        await self.consolidate_tips(res_tips, evaluation, task)
+    
+        for key in eval_stats:
+            if key != "history":
+                exec_stats[key] = exec_stats.get(key, 0) + eval_stats[key]
+    
         exec_stats.pop("history", None)
-        
+    
         return result, exec_stats
 
     async def check_server(self):

@@ -1,10 +1,9 @@
 import os
-from pydantic_ai.models.openrouter import OpenRouterModel, OpenRouterModelSettings
-from pydantic_ai.providers.openrouter import OpenRouterProvider
 from pydantic_ai import Agent, RunContext, ModelRetry
 from pydantic import BaseModel, field_validator
 from typing import List
 from utils.prompt_loading import load_prompt
+from Agents.utils.load_model import load_model
 
 class EvaluatorOutput(BaseModel):
     success: bool
@@ -30,16 +29,8 @@ class EvaluatorOutput(BaseModel):
         return v
 
 def get_evaluator():
-    model = OpenRouterModel(
-        os.getenv("EVALUATOR_MODEL"),
-        provider=OpenRouterProvider(api_key=os.getenv("PROVIDER_KEY"))
-    )
-    settings = OpenRouterModelSettings(
-        openrouter_reasoning={
-            "effort": os.getenv("REASONING"),
-        }
-    )
-
+    model, settings = load_model("EVALUATOR")
+    
     evaluator = Agent(
         model,
         name="evaluator",
