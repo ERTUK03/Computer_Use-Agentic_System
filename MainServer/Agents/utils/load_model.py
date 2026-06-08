@@ -25,7 +25,7 @@ def load_model(model_name):
         )
 
     if model_settings == "True":
-        settings = settings = OpenRouterModelSettings(
+        settings = OpenRouterModelSettings(
             openrouter_reasoning={
                 'effort': os.getenv("REASONING")
             }
