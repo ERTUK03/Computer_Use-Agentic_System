@@ -1,5 +1,3 @@
-from pydantic_ai import ModelRequestContext, RunContext, ToolReturn, Tool
-from pydantic_ai.messages import ModelResponse
 from weaviate.classes.config import Configure
 import weaviate.classes as wvc
 import weaviate
@@ -7,8 +5,8 @@ from aiohttp import web
 import aiohttp
 from dotenv import load_dotenv
 from pathlib import Path
-import os, logfire, time, random, re, json, asyncio
-from engine import Engine
+import os, re, json, asyncio
+from .engine import Engine
 import aiosqlite
 
 BASE_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()

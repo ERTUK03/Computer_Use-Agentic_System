@@ -173,8 +173,9 @@ async def screenshot() -> dict:
     img_b64 = base64.b64encode(img_bytes).decode("utf-8")
 
     return {
-            "image": img_b64,
-            "format": "image/png"
+        "image": img_b64,
+        "format": "image/png",
+        "size": list(new_size)
     }
 
 @server.tool()

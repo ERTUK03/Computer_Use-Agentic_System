@@ -1,0 +1,17 @@
+# Jupyter / Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Environment / secrets
+*.env
+config.env
+
+# Local runtime files
+*.db
+
+# Models (usually too large for git)
+models/
+
+# OS
+.DS_Store

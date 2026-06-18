@@ -1,6 +1,6 @@
 import gradio as gr
 import asyncio
-from client import Client
+from .client import Client
 import json
 
 client = None
@@ -37,17 +37,17 @@ with gr.Blocks() as demo:
 
     with gr.Row():
         ws_url = gr.Textbox(
-            value="URL",
+            value="http://localhost:8090/ws",
             label="WebSocket URL"
         )
 
         client_id = gr.Textbox(
-            value="USER",
+            value="user_1",
             label="Client ID"
         )
 
     mcp_server = gr.Textbox(
-        value="SERVER",
+        value="http://localhost:8000/mcp",
         label="MCP Server"
     )
 
