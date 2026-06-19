@@ -1,7 +1,7 @@
 from pydantic_ai import Agent
 import os
 import re
-from Agents.utils.load_model import load_model
+from ...utils.load_model import load_model
 
 class GrounderAgent:
     def __init__(self, agent, reorder_image_first=False):

@@ -1,6 +1,6 @@
 from pydantic_ai import Agent
-from utils.prompt_loading import load_prompt
-from Agents.utils.load_model import load_model
+from ....utils.prompt_loading import load_prompt
+from ...utils.load_model import load_model
 
 def get_planner(hooks=None):
     model, settings = load_model("Planner")

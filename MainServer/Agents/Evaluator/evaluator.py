@@ -2,8 +2,8 @@ import os
 from pydantic_ai import Agent, RunContext, ModelRetry
 from pydantic import BaseModel, field_validator
 from typing import List
-from utils.prompt_loading import load_prompt
-from Agents.utils.load_model import load_model
+from ...utils.prompt_loading import load_prompt
+from ..utils.load_model import load_model
 
 class EvaluatorOutput(BaseModel):
     success: bool

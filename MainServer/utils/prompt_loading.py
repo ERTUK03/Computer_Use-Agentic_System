@@ -1,4 +1,8 @@
 from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+PROMPTS_DIR = BASE_DIR / "Prompts"
+
 def load_prompt(name):
-    return Path(f"Prompts/{name}.md").read_text(encoding="utf-8")
+    path = PROMPTS_DIR / f"{name}.md"
+    return path.read_text(encoding="utf-8")

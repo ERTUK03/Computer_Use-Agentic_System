@@ -1,4 +1,4 @@
-import logfires
+import logfire
 from pydantic_ai import Agent, ModelRequestContext, RunContext
 from pydantic_ai.capabilities import Hooks, WrapModelRequestHandler
 from pydantic_ai.messages import ModelResponse
