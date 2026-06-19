@@ -7,7 +7,7 @@ class MemoriesManager():
     def __init__(self, memories, client_id, tip_num, tip_threshold, consolidate_threshold):
         existing = memories.tenants.get()
         
-        if client_id not in [t.name for t in existing]:
+        if client_id not in [t for t in existing]:
             memories.tenants.create([Tenant(name=client_id)])
             
         self.user_memories = memories.with_tenant(tenant=client_id)

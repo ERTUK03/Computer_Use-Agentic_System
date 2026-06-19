@@ -1,9 +1,7 @@
 import logfire
-from pydantic_ai import Agent, ModelRequestContext, RunContext
-from pydantic_ai.capabilities import Hooks, WrapModelRequestHandler
-from pydantic_ai.messages import ModelResponse
 import os
 import re
+from .engine_base import EngineBase
 from .Agents.Evaluator.evaluator import get_evaluator
 from .Agents.Executor.executor import get_executor
 from .utils.message_parsing import parse_messages
@@ -12,28 +10,12 @@ from .utils.tips import MemoriesManager
 logfire.configure()
 logfire.instrument_pydantic_ai()
 
-class Engine:
+class Engine(EngineBase):
     def __init__(self):
+        super().__init__()
         self.tip_num = int(os.getenv("TIP_NUM"))
         self.tip_threshold = float(os.getenv("TIP_THRESHOLD"))
         self.consolidate_threshold = float(os.getenv("CONSOLIDATE_THRESHOLD"))
-        self.server=None
-        self.client_id=None
-        
-        self.hooks = Hooks()
-    
-        self.wrap_log: list = []
-
-        @self.hooks.on.model_request
-        async def log_request(
-            ctx: RunContext[None], *, request_context: ModelRequestContext, handler: WrapModelRequestHandler
-        ) -> ModelResponse:
-            self.wrap_log.append({"event": request_context.messages[-1],
-                                  "agent": ctx.agent.name})
-            response = await handler(request_context)
-            self.wrap_log.append({"event": response,
-                                  "agent": ctx.agent.name})
-            return response
         
     async def set_client(self, memories, client_id, server=None):
         self.client_id=client_id
@@ -46,8 +28,7 @@ class Engine:
         )
         self.evaluator = get_evaluator()
         if server:
-            self.server=server
-            self.executor=get_executor(self.server, self.hooks)
+            await self.set_server(server)
 
     async def set_server(self, server):
         self.server = server
@@ -83,6 +64,3 @@ class Engine:
         exec_stats.pop("history", None)
     
         return result, exec_stats
-
-    async def check_server(self):
-        return await self.executor.check_server()
