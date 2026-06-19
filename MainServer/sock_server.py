@@ -6,22 +6,20 @@ import aiohttp
 from dotenv import load_dotenv
 from pathlib import Path
 import os, re, json, asyncio
-
-
-
-
-#from .engine import Engine
-from .state_engine import Engine
-
-
-
-
+import importlib
 import aiosqlite
 
 BASE_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
 env_path = BASE_DIR / "config.env"
 
 load_dotenv(env_path)
+
+server_type = os.getenv("SERVER_TYPE")
+
+module = importlib.import_module(
+    f".{server_type}_engine",
+    package=__package__
+)
 
 vdb_client = weaviate.connect_to_local()
 
@@ -63,7 +61,7 @@ class WSConnection:
         await self.ws.prepare(self.request)
         print('websocket connection opened')
         
-        self.engine = Engine()
+        self.engine = module.Engine()
         
         connections.append(self)
 
