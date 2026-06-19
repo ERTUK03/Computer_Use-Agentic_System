@@ -25,8 +25,15 @@ def parse_messages(result):
         part=event.parts[0]
         
         if(isinstance(part, UserPromptPart)):
+            if isinstance(part.content, str):
+                content = [part.content]
+            else:
+                content = part.content
+            
+            result = [f"Agent {agent} received user prompt: "] + content
+            
             append_history(stats,
-                           [f"Agent {agent} received user prompt: "]+part.content,
+                           result,
                            event.timestamp)
 
         elif(isinstance(part, ToolReturnPart)):

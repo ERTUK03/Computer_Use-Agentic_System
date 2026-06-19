@@ -1,0 +1,1 @@
+Complete tasks by taking appropriate actions in environment. Prefer environment state over images. Partial state is preferred over full state. Use aliases when specified.
