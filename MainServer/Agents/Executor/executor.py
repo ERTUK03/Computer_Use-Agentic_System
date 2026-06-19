@@ -12,7 +12,7 @@ class Executor:
         
         executor_model, settings = load_model("EXECUTOR")
 
-        filtered_server = self.server.filtered(lambda ctx, tool_def: tool_def.name!="screenshot")
+        filtered_server = self.server.filtered(lambda ctx, tool_def: tool_def.name not in ["screenshot", "screenshot_size"])
         
         self.planner = get_planner(hooks)
         self.grounder = get_grounder(hooks)
@@ -29,7 +29,6 @@ class Executor:
                 Tool(self.get_screenshot, takes_ctx=False)
             ],
             model_settings=settings,
-            output_type=[ToolOutput(self.end_conversation, name='end_conversation')],
             capabilities=[hooks] if hooks is not None else []
         )
 
@@ -39,18 +38,15 @@ class Executor:
         
         image = ret_image["content"]["image"]
         image_type = ret_image["content"]["format"]
-        image_size = ret_image["content"]["size"]
 
         return BinaryContent(data=image, media_type=image_type)
 
-    async def get_screenshot_size(self) -> str:
-        ret_image = await self.server.direct_call_tool(name="screenshot", args={})
+    async def get_screenshot_size(self):
+        ret_size = await self.server.direct_call_tool(name="screenshot_size", args={})
         
-        image = ret_image["content"]["image"]
-        image_type = ret_image["content"]["format"]
-        image_size = ret_image["content"]["size"]
+        image_size = ret_size["content"]
 
-        return BinaryContent(data=image, media_type=image_type), image_size
+        return image_size
 
     async def get_plan(self, task: str):
         """Returns a step-by-step plan of completing a task specified by 'task' argument"""
@@ -65,7 +61,8 @@ class Executor:
         Args:
             element: specifies what element to return bounding boxes for.
         """
-        screenshot, img_size = await self.get_screenshot_size()
+        screenshot = await self.get_screenshot()
+        img_size = await self.get_screenshot_size()
 
         grounding_agent_result = await self.grounder.run([
                 f"Find {element} in the image and return only its location in the form of coordinates of a bounding box.",
@@ -73,10 +70,6 @@ class Executor:
             ], img_size)
     
         return grounding_agent_result
-
-    async def end_conversation(self, output: str) -> str:
-        """Ends conversation when task is completed"""
-        return output
 
     async def wait(self) -> str:
         """A small break to allow environment to load"""

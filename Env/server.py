@@ -174,9 +174,13 @@ async def screenshot() -> dict:
 
     return {
         "image": img_b64,
-        "format": "image/png",
-        "size": list(new_size)
+        "format": "image/png"
     }
+
+@server.tool()
+@return_func
+async def screenshot_size() -> list:
+    return list(new_size)
 
 @server.tool()
 @return_func
