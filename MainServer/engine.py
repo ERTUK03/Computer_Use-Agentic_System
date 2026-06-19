@@ -73,9 +73,8 @@ class Engine:
     
         eval_log = self.wrap_log[len(exec_log):] 
         eval_stats = parse_messages(eval_log)
-    
-        await self.MemoriesManager.summarize_tips(res_tips, tips, evaluation)
-        await self.MemoriesManager.consolidate_tips(res_tips, evaluation, task)
+        
+        await self.MemoriesManager.consolidate_tips(res_tips, tips, evaluation, task)
     
         for key in eval_stats:
             if key != "history":

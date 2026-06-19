@@ -1,9 +1,15 @@
 from weaviate.classes.query import MetadataQuery
+from weaviate.classes.tenants import Tenant
 import random
 from .embeddings import embed, cosine
 
 class MemoriesManager():
     def __init__(self, memories, client_id, tip_num, tip_threshold, consolidate_threshold):
+        existing = memories.tenants.get()
+        
+        if client_id not in [t.name for t in existing]:
+            memories.tenants.create([Tenant(name=client_id)])
+            
         self.user_memories = memories.with_tenant(tenant=client_id)
         self.tip_num = tip_num
         self.tip_threshold = tip_threshold
@@ -31,7 +37,7 @@ class MemoriesManager():
     
         return res_tips, tips
     
-    async def summarize_tips(self, res_tips, tips, evaluation):
+    async def consolidate_tips(self, res_tips, tips, evaluation, task):
         for group_num in range(len(tips)):
             tip_num = 0
             while tip_num < len(tips[group_num]):
@@ -47,8 +53,7 @@ class MemoriesManager():
                     tip_num -= 1
     
                 tip_num += 1
-    
-    async def consolidate_tips(self, res_tips, evaluation, task):
+        
         if not res_tips:
             self.user_memories.data.insert({
                 "task": task,
