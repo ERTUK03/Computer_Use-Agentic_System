@@ -49,7 +49,7 @@ class StateExecutor:
         )
 
     async def run(self, task):
-        result = await self.state_executor.run(f"Task {task}")
+        result = await self.state_executor.run(["Task: "]+task)
 
         return result
 

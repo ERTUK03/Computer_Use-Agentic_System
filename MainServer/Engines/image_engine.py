@@ -26,7 +26,7 @@ class Engine(EngineBase):
             self.tip_threshold, 
             self.consolidate_threshold
         )
-        self.evaluator = get_evaluator()
+        self.evaluator = get_evaluator(self.hooks)
         if server:
             await self.set_server(server)
 

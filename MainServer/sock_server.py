@@ -23,9 +23,9 @@ module = importlib.import_module(
 
 vdb_client = weaviate.connect_to_local()
 
-if not vdb_client.collections.exists("Memories"):
+if not vdb_client.collections.exists("Trajectories"):
     memories = vdb_client.collections.create(
-        "Memories",
+        "Trajectories",
         vector_config=Configure.Vectors.text2vec_ollama( 
             api_endpoint=os.getenv("API_ENDPOINT"), 
             model=os.getenv("EMBEDDING_MODEL"),
@@ -39,7 +39,7 @@ if not vdb_client.collections.exists("Memories"):
     )
 
 else:
-    memories = vdb_client.collections.use("Memories")
+    memories = vdb_client.collections.use("Trajectories")
 
 connections = []
 

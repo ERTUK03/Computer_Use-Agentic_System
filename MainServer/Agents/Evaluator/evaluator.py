@@ -28,7 +28,7 @@ class EvaluatorOutput(BaseModel):
             raise ValueError("score must be between 1 and 10")
         return v
 
-def get_evaluator():
+def get_evaluator(hooks=None):
     model, settings = load_model("EVALUATOR")
     
     evaluator = Agent(
@@ -37,6 +37,7 @@ def get_evaluator():
         output_type=EvaluatorOutput,
         instructions=load_prompt("evaluator"),
         model_settings=settings,
+        capabilities=[hooks] if hooks is not None else []
     )
 
     return evaluator
