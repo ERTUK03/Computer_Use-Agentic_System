@@ -14,10 +14,10 @@ env_path = BASE_DIR / "config.env"
 
 load_dotenv(env_path)
 
-server_type = os.getenv("SERVER_TYPE")
+engine_type = os.getenv("SERVER_TYPE")
 
 module = importlib.import_module(
-    f".{server_type}_engine",
+    f".Engines.{engine_type}_engine",
     package=__package__
 )
 

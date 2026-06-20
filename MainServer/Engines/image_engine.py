@@ -2,10 +2,10 @@ import logfire
 import os
 import re
 from .engine_base import EngineBase
-from .Agents.Evaluator.evaluator import get_evaluator
-from .Agents.Executor.executor import get_executor
-from .utils.message_parsing import parse_messages
-from .utils.tips import MemoriesManager
+from ..Agents.Evaluator.evaluator import get_evaluator
+from ..Agents.Executor.executor import get_executor
+from ..utils.message_parsing import parse_messages
+from ..utils.tips import MemoriesManager
 
 logfire.configure()
 logfire.instrument_pydantic_ai()
