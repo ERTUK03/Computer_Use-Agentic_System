@@ -2,7 +2,7 @@ from pydantic_ai import Agent, Tool, ToolOutput, BinaryContent
 from pydantic_ai.mcp import MCPServerStreamableHTTP
 from .Planner.planner import get_planner
 from .Grounder.grounder import get_grounder
-from ...utils.prompt_loading import load_prompt
+from ..utils.prompt_loading import load_prompt
 import re, time
 from ..utils.load_model import load_model
 

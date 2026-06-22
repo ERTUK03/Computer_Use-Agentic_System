@@ -1,14 +1,9 @@
-from pydantic_ai import Agent, Tool, ToolOutput, BinaryContent
+from pydantic_ai import Agent, BinaryContent
 from pydantic_ai.mcp import MCPServerStreamableHTTP
-from ...utils.prompt_loading import load_prompt
-import re, time
+from ..utils.prompt_loading import load_prompt
 from ..utils.load_model import load_model
-from pydantic_ai.mcp import MCPServerStreamableHTTP
 import base64
 from pydantic_ai.messages import BinaryContent
-from pydantic_ai.mcp import MCPServerStdio
-from pydantic_ai.messages import BinaryContent
-import base64
 
 def decode_image(content: dict) -> BinaryContent:
     data = content["data"] + "=" * (4 - len(content["data"]) % 4)
