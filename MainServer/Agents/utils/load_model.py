@@ -4,11 +4,22 @@ from pydantic_ai.models.openrouter import OpenRouterModel
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.models.openrouter import OpenRouterModelSettings
+from .prompt_loading import load_prompt
+from pydantic_ai import Agent, Tool, ToolOutput, BinaryContent
+from pydantic_ai.mcp import MCPServerStreamableHTTP
 
-def load_model(model_name):
-    model_source = os.getenv(f"{model_name}_SOURCE")
-    model_url = os.getenv(f"{model_name}_MODEL")
-    model_settings = os.getenv(f"{model_name}_SETTINGS")
+def load_model(model_name, include_prompt=True):
+    result = {}
+    
+    upper_model_name = model_name.upper()
+    
+    model_source = os.getenv(f"{upper_model_name}_SOURCE")
+    model_url = os.getenv(f"{upper_model_name}_MODEL")
+    model_settings = os.getenv(f"{upper_model_name}_SETTINGS")
+
+    model = None
+    settings = None
+    prompt = None
     
     if model_source == "local":
         model = OpenAIModel(
@@ -30,6 +41,31 @@ def load_model(model_name):
                 'effort': os.getenv("REASONING")
             }
         )
-        return model, settings
+
+    if include_prompt:
+        prompt = load_prompt(model_name)
         
-    return model
+    return model, settings, prompt
+
+def load_full_model(
+    model_name, 
+    output_type = str, 
+    capabilities = None, 
+    tools = (),
+    toolsets = None, 
+    include_prompt=True
+):
+    model, settings, prompt = load_model(model_name)
+    
+    agent = Agent(
+        model,
+        name=model_name,
+        output_type=output_type,
+        instructions=prompt,
+        model_settings=settings,
+        capabilities=capabilities,
+        tools = tools,
+        toolsets = toolsets
+    )
+
+    return agent

@@ -1,7 +1,6 @@
-from pydantic_ai import Agent, BinaryContent
+from pydantic_ai import BinaryContent
 from pydantic_ai.mcp import MCPServerStreamableHTTP
-from ..utils.prompt_loading import load_prompt
-from ..utils.load_model import load_model
+from ..utils.load_model import load_full_model
 import base64
 from pydantic_ai.messages import BinaryContent
 
@@ -31,16 +30,14 @@ class StateExecutor:
             include_instructions=True,
             process_tool_call=process_tool_call
         )
-        
-        state_executor_model, settings = load_model("STATE_EXECUTOR")
 
-        self.state_executor = Agent(  
-            state_executor_model,
-            name="state_executor",
-            instructions=(load_prompt("state_executor")),
+        model_name = "state_executor"
+
+        self.state_executor = load_full_model(
+            model_name,
             toolsets=[self.server],
-            model_settings=settings,
-            capabilities=[hooks] if hooks is not None else []
+            capabilities=hooks,
+            include_prompt=True
         )
 
     async def run(self, task):

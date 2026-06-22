@@ -3,7 +3,7 @@ import os
 import re
 from .engine_base import EngineBase
 from ..Agents.State_Executor.state_executor import get_executor
-from ..utils.state_message_parsing import parse_messages
+from ..utils.message_parsing import parse_messages
 from ..Agents.Evaluator.evaluator import get_evaluator
 from ..utils.trajectories import TrajectoriesManager
 import json
@@ -25,13 +25,13 @@ class Engine(EngineBase):
             self.trajectory_num,
             self.trajectory_threshold
         )
-        self.evaluator = get_evaluator(self.hooks)
+        self.evaluator = get_evaluator([self.hooks])
         if server:
             await self.set_server(server)
 
     async def set_server(self, server):
         self.server = server
-        self.executor = get_executor(self.server, self.hooks)
+        self.executor = get_executor(self.server, [self.hooks])
 
     async def execute(self, task):
         self.wrap_log = []

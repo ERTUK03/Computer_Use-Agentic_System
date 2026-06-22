@@ -2,34 +2,30 @@ from pydantic_ai import Agent, Tool, ToolOutput, BinaryContent
 from pydantic_ai.mcp import MCPServerStreamableHTTP
 from .Planner.planner import get_planner
 from .Grounder.grounder import get_grounder
-from ..utils.prompt_loading import load_prompt
 import re, time
-from ..utils.load_model import load_model
+from ..utils.load_model import load_full_model
 
 class Executor:
     def __init__(self, server, hooks):
         self.server = MCPServerStreamableHTTP(server, include_instructions=True)
-        
-        executor_model, settings = load_model("EXECUTOR")
+
+        model_name = "executor"
 
         filtered_server = self.server.filtered(lambda ctx, tool_def: tool_def.name not in ["screenshot", "screenshot_size"])
         
         self.planner = get_planner(hooks)
         self.grounder = get_grounder(hooks)
 
-        self.executor = Agent(  
-            executor_model,
-            name="executor",
-            instructions=(load_prompt("executor")),
+        self.executor = load_full_model(
+            model_name,
+            capabilities=hooks,
             toolsets=[filtered_server],
             tools=[
                 Tool(self.get_coordinates, takes_ctx=False),
                 Tool(self.get_plan, takes_ctx=False),
                 Tool(self.wait, takes_ctx=False),
                 Tool(self.get_screenshot, takes_ctx=False)
-            ],
-            model_settings=settings,
-            capabilities=[hooks] if hooks is not None else []
+            ]
         )
 
     async def get_screenshot(self) -> str:

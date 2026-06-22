@@ -1,9 +1,6 @@
-import os
-from pydantic_ai import Agent, RunContext, ModelRetry
 from pydantic import BaseModel, field_validator
 from typing import List
-from ..utils.prompt_loading import load_prompt
-from ..utils.load_model import load_model
+from ..utils.load_model import load_full_model
 
 class EvaluatorOutput(BaseModel):
     success: bool
@@ -29,15 +26,12 @@ class EvaluatorOutput(BaseModel):
         return v
 
 def get_evaluator(hooks=None):
-    model, settings = load_model("EVALUATOR")
-    
-    evaluator = Agent(
-        model,
-        name="evaluator",
-        output_type=EvaluatorOutput,
-        instructions=load_prompt("evaluator"),
-        model_settings=settings,
-        capabilities=[hooks] if hooks is not None else []
+    model_name = "evaluator"
+
+    evaluator = load_full_model(
+        model_name,
+        output_type = EvaluatorOutput,
+        capabilities = hooks
     )
 
     return evaluator

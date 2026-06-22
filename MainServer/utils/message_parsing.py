@@ -21,40 +21,42 @@ def parse_messages(result):
     for mess in result:
         event=mess["event"]
         agent=mess["agent"]
-
-        part=event.parts[0]
         
-        if(isinstance(part, UserPromptPart)):
-            if isinstance(part.content, str):
-                content = [part.content]
-            else:
-                content = part.content
+        for part in event.parts:
             
-            result = [f"Agent {agent} received user prompt: "] + content
+            if(isinstance(part, UserPromptPart)):
+                if isinstance(part.content, str):
+                    content = [part.content]
+                else:
+                    content = part.content
+                
+                result = [f"Agent {agent} received user prompt: "] + content
+                
+                append_history(stats,
+                               result,
+                               event.timestamp)
+    
+            elif(isinstance(part, ToolReturnPart)):
+                if isinstance(part.content, list):
+                    tool_content = part.content
+                elif isinstance(part.content, dict):
+                    tool_content = [json.dumps(part.content)]
+                else:
+                    tool_content = [part.content]
+    
+                append_history(stats,
+                               [f"Tool {part.tool_name} returned to agent {agent}: "]+tool_content,
+                               event.timestamp)
+    
+            if(isinstance(part, TextPart)):
+                append_history(stats,
+                               [f"Agent {agent} returned: {part.content}"],
+                               event.timestamp)
             
-            append_history(stats,
-                           result,
-                           event.timestamp)
-
-        elif(isinstance(part, ToolReturnPart)):
-            if isinstance(part.content, list) or isinstance(part.content, dict):
-                tool_content = [json.dumps(part.content)]
-            else:
-                tool_content = [part.content]
-
-            append_history(stats,
-                           [f"Tool {part.tool_name} returned to agent {agent}: "]+tool_content,
-                           event.timestamp)
-
-        if(isinstance(part, TextPart)):
-            append_history(stats,
-                           [f"Agent {agent} returned: {part.content}"],
-                           event.timestamp)
-        
-        elif(isinstance(part, ToolCallPart)):
-            append_history(stats,
-                           [f"Agent {agent} called tool: {part.tool_name} with arguments: {part.args}"],
-                           event.timestamp)
+            elif(isinstance(part, ToolCallPart)):
+                append_history(stats,
+                               [f"Agent {agent} called tool: {part.tool_name} with arguments: {part.args}"],
+                               event.timestamp)
             
         if(isinstance(event, ModelResponse)):
             cost = (event.provider_details or {}).get("cost")

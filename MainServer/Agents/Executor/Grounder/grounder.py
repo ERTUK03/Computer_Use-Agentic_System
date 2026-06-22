@@ -1,7 +1,6 @@
-from pydantic_ai import Agent
 import os
 import re
-from ...utils.load_model import load_model
+from ...utils.load_model import load_full_model
 
 class GrounderAgent:
     def __init__(self, agent, reorder_image_first=False):
@@ -37,12 +36,12 @@ class GrounderAgent:
         return json.loads(content)
 
 def get_grounder(hooks=None):
-    model = load_model("GROUNDER")
-
-    agent = Agent(
-        model,
-        name="grounder",
-        capabilities=[hooks] if hooks is not None else []
+    model_name = "grounder"
+    
+    agent = load_full_model(
+        model_name, 
+        capabilities = hooks,
+        include_prompt=False
     )
 
     return GrounderAgent(
