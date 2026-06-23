@@ -1,4 +1,8 @@
 import subprocess
+import json
+
+def _normalize(s: str) -> str:
+    return s.lower().replace(" ", "")
 
 def get_app_pid(name: str):
     result = subprocess.run(
