@@ -25,7 +25,10 @@ class Client:
                 except json.JSONDecodeError:
                     continue
 
-                await self.responses.put(data["msg_content"])
+                if isinstance(data["msg_content"], dict):  
+                    await self.responses.put(tuple(data["msg_content"].values()))
+                else:
+                    await self.responses.put(data["msg_content"])
 
     async def identify_client(self, client_id):
         if self.ws:

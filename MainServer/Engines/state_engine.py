@@ -69,7 +69,10 @@ class Engine(EngineBase):
         for key in eval_stats:
             if key != "history":
                 exec_stats[key] = exec_stats.get(key, 0) + eval_stats[key]
-
-        exec_stats.pop("history", None)
+            else:
+                exec_stats[key] = exec_stats.get(key, 0) + eval_stats[key][1:]
     
-        return result.output, exec_stats
+        history = exec_stats.get("history", [])
+        stats = {k: v for k, v in exec_stats.items() if k != "history"}
+        
+        return result, stats, history

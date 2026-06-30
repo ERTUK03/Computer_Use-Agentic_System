@@ -110,9 +110,9 @@ class WSConnection:
             await self.send_error("No server specified")
         else:
             if await self.engine.check_server():
-                result, stats = await self.engine.execute(data["msg_content"])
+                result, stats, history = await self.engine.execute(data["msg_content"])
                 
-                await self.send_message("Task", {"result": result, "stats": stats})
+                await self.send_message("Task", {"result": result.output, "stats": stats, "history": history})
             else:
                 await self.send_error("No server connection")
 

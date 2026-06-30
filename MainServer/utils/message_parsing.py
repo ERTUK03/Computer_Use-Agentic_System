@@ -5,7 +5,7 @@ import json
 def append_history(stats, content, timestamp):
     stats["history"].append({
         "content": content,
-        "timestamp": timestamp
+        "timestamp": timestamp.isoformat()
     })
 
 def parse_messages(result):

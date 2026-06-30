@@ -68,12 +68,14 @@ with gr.Blocks() as demo:
 
     task = gr.Textbox(label="Task")
     run_btn = gr.Button("Run Task")
-    output = gr.JSON(label="Response")
+    response = gr.Textbox(label="Response")
+    stats = gr.JSON(label="Stats")
+    history = gr.JSON(label="History")
 
     run_btn.click(
         fn=client.send_task,
         inputs=task,
-        outputs=output,
+        outputs=[response, stats, history],
     )
 
 demo.launch()
