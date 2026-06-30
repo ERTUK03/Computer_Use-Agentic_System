@@ -3,71 +3,75 @@ import asyncio
 from .client import Client
 import json
 
-client = None
-
-async def connect_client(ws_url, client_id, mcp_server):
-    global client
-
-    if client:
-        await client.close()
-
-    client = Client()
-
-    await client.connect(ws_url)
-    await client.identify_client(client_id)
-    await client.set_server(mcp_server)
-
-    return "Connected"
-
-async def run_task(task):
-    global client
-
-    if client is None:
-        return "Not connected"
-
-    await client.send_task(task)
-
-    response = await client.wait_for_response()
-
-    return json.dumps(response, indent=2)
-
+client = Client()
 
 with gr.Blocks() as demo:
     gr.Markdown("# WebSocket Client")
 
-    with gr.Row():
+    with gr.Row(equal_height=True):
         ws_url = gr.Textbox(
             value="http://localhost:8090/ws",
             label="WebSocket URL"
         )
 
+        connect_btn = gr.Button("Connect")
+        connect_status = gr.Textbox(label="connect_status")
+
+    with gr.Row(equal_height=True):
         client_id = gr.Textbox(
             value="user_1",
             label="Client ID"
         )
 
-    mcp_server = gr.Textbox(
-        value="http://localhost:8000/mcp",
-        label="MCP Server"
-    )
+        identify_client_btn = gr.Button("Identify Client")
+        identify_client_status = gr.Textbox(label="identify_client_status")
+        
+    with gr.Row(equal_height=True):
+        mcp_server = gr.Textbox(
+            value="http://localhost:8000/mcp",
+            label="MCP Server"
+        )
 
-    connect_btn = gr.Button("Connect")
-    status = gr.Textbox(label="Status")
+        set_server_btn = gr.Button("Set Server")
+        set_server_status = gr.Textbox(label="set_server_status")
+
+    with gr.Row(equal_height=True):
+        close_btn = gr.Button("Close")
+        close_status = gr.Textbox(label="close_status")
+
 
     connect_btn.click(
-        fn=connect_client,
-        inputs=[ws_url, client_id, mcp_server],
-        outputs=status,
+        fn=client.connect,
+        inputs=[ws_url],
+        outputs=connect_status,
+    )
+
+    identify_client_btn.click(
+        fn=client.identify_client,
+        inputs=[client_id],
+        outputs=identify_client_status,
+    )
+
+    set_server_btn.click(
+        fn=client.set_server,
+        inputs=[mcp_server],
+        outputs=set_server_status,
+    )
+
+    close_btn.click(
+        fn=client.close,
+        inputs=[],
+        outputs=close_status,
     )
 
     gr.Markdown("## Task")
 
     task = gr.Textbox(label="Task")
     run_btn = gr.Button("Run Task")
-    output = gr.Code(label="Response", language="json")
+    output = gr.JSON(label="Response")
 
     run_btn.click(
-        fn=run_task,
+        fn=client.send_task,
         inputs=task,
         outputs=output,
     )

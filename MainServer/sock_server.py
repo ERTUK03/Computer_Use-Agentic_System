@@ -16,6 +16,8 @@ load_dotenv(env_path)
 
 engine_type = os.getenv("SERVER_TYPE")
 
+experience_type = "Trajectories" if engine_type =="state" else "Memories"
+
 module = importlib.import_module(
     f".Engines.{engine_type}_engine",
     package=__package__
@@ -23,9 +25,9 @@ module = importlib.import_module(
 
 vdb_client = weaviate.connect_to_local()
 
-if not vdb_client.collections.exists("Trajectories"):
-    memories = vdb_client.collections.create(
-        "Trajectories",
+if not vdb_client.collections.exists(experience_type):
+    experience = vdb_client.collections.create(
+        experience_type,
         vector_config=Configure.Vectors.text2vec_ollama( 
             api_endpoint=os.getenv("API_ENDPOINT"), 
             model=os.getenv("EMBEDDING_MODEL"),
@@ -39,7 +41,7 @@ if not vdb_client.collections.exists("Trajectories"):
     )
 
 else:
-    memories = vdb_client.collections.use("Trajectories")
+    experience = vdb_client.collections.use(experience_type)
 
 connections = []
 
@@ -77,7 +79,8 @@ class WSConnection:
         server = await res.fetchone()
         if server:
             self.server=server[0]
-        await self.engine.set_client(memories, self.client_id, self.server)
+        await self.engine.set_client(experience, self.client_id, self.server)
+        await self.send_message("IdentifyClient", "Client identified")
 
     async def set_server(self, data):
         self.server=data["msg_content"]
@@ -98,6 +101,7 @@ class WSConnection:
             )
         await self.request.app["db"].commit()
         await self.engine.set_server(self.server)
+        await self.send_message("SetServer", "Server set")
     
     async def handle_task(self, data):
         if not self.client_id:
@@ -107,7 +111,8 @@ class WSConnection:
         else:
             if await self.engine.check_server():
                 result, stats = await self.engine.execute(data["msg_content"])
-                await self.respond({"result":result.output, "stats":stats})
+                
+                await self.send_message("Task", {"result": result, "stats": stats})
             else:
                 await self.send_error("No server connection")
 
@@ -144,9 +149,6 @@ class WSConnection:
             "msg_content": message_content
         }
         await self.ws.send_str(json.dumps(message))
-
-    async def respond(self, response):
-        await self.send_message("Task_response", response)
 
     async def send_error(self, error):
         await self.send_message("Error", error)

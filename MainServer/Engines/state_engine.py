@@ -72,4 +72,4 @@ class Engine(EngineBase):
 
         exec_stats.pop("history", None)
     
-        return result, exec_stats
+        return result.output, exec_stats
