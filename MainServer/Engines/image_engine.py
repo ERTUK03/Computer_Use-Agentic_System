@@ -26,13 +26,13 @@ class Engine(EngineBase):
             self.tip_threshold, 
             self.consolidate_threshold
         )
-        self.evaluator = get_evaluator(self.hooks)
+        self.evaluator = get_evaluator([self.hooks])
         if server:
             await self.set_server(server)
 
     async def set_server(self, server):
         self.server = server
-        self.executor = get_executor(self.server, self.hooks)
+        self.executor = get_executor(self.server, [self.hooks])
 
     async def execute(self, task):
         self.wrap_log = []

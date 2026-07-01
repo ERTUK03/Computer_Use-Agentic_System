@@ -1,6 +1,18 @@
 from pydantic_ai.messages import *
+from pydantic_ai import BinaryContent, ImageUrl, AudioUrl, DocumentUrl
 import pydantic_ai
 import json
+
+_VALID_CONTENT_TYPES = (str, BinaryContent, ImageUrl, AudioUrl, DocumentUrl)
+
+def _sanitize_content_item(item):
+    """Ensure every content item is either a plain string or a type
+    pydantic_ai's model layer recognizes. Anything else (dicts, numbers,
+    bounding boxes, etc.) gets stringified so it can't blow up later."""
+    if isinstance(item, _VALID_CONTENT_TYPES):
+        return item
+    return json.dumps(item, ensure_ascii=False)
+
 
 def append_history(stats, content, timestamp):
     stats["history"].append({
@@ -28,7 +40,7 @@ def parse_messages(result):
                 if isinstance(part.content, str):
                     content = [part.content]
                 else:
-                    content = part.content
+                    content = [_sanitize_content_item(item) for item in part.content]
                 
                 result = [f"Agent {agent} received user prompt: "] + content
                 
@@ -38,11 +50,11 @@ def parse_messages(result):
     
             elif(isinstance(part, ToolReturnPart)):
                 if isinstance(part.content, list):
-                    tool_content = part.content
+                    tool_content = [_sanitize_content_item(item) for item in part.content]
                 elif isinstance(part.content, dict):
-                    tool_content = [json.dumps(part.content)]
+                    tool_content = [json.dumps(part.content, ensure_ascii=False)]
                 else:
-                    tool_content = [part.content]
+                    tool_content = [_sanitize_content_item(part.content)]
     
                 append_history(stats,
                                [f"Tool {part.tool_name} returned to agent {agent}: "]+tool_content,

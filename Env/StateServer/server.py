@@ -4,7 +4,6 @@ from io import BytesIO
 from functools import wraps
 import asyncio
 import time
-import weakref
 from PIL import Image
 import io
 from typing import Literal, Optional
@@ -27,24 +26,11 @@ class ClientState:
         self.live_tree = None
         self.aliases = None
 
-
-_client_states: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
-
-
-def get_state(ctx: Context) -> ClientState:
-    """Fetch (or lazily create) the ClientState for the calling client's session."""
-    session = ctx.session
-    state = _client_states.get(session)
-    if state is None:
-        state = ClientState()
-        _client_states[session] = state
-    return state
-
+state = ClientState()
 
 def return_func(func):
     @wraps(func)
     async def inner(*args, **kwargs):
-        # Don't log ctx in the call log -- it's noisy and not JSON-serializable.
         log_kwargs = {k: v for k, v in kwargs.items() if k != "ctx"}
         print(f"Called function: {func.__name__} with arguments: {log_kwargs}")
         result = {"status": "OK"}
@@ -58,15 +44,12 @@ def return_func(func):
         return result
     return inner
 
-
 @server.tool()
 @return_func
 async def launch_app(app_name: str, ctx: Context):
     """
     Launches app specified by 'app_name' parameter and returns its current state.
     """
-    state = get_state(ctx)
-
     def _do_launch():
         if state.dlg:
             try:
@@ -81,13 +64,11 @@ async def launch_app(app_name: str, ctx: Context):
         live_tree, aliases = extract_live_ui_tree(dlg)
         time.sleep(1)
         live_tree, aliases = extract_live_ui_tree(dlg)
-        
+
         return app, dlg, live_tree, aliases
-    
+
     state.app, state.dlg, state.live_tree, state.aliases = await asyncio.to_thread(_do_launch)
-
     return state.live_tree
-
 
 @server.tool()
 @return_func
@@ -116,7 +97,6 @@ async def take_action(
     - scroll
     - input_text
     """
-    state = get_state(ctx)
 
     def _do_action():
         nonlocal element_title
@@ -195,9 +175,8 @@ async def take_action(
 
         except Exception as e:
             return str(e)
-            
-    return await asyncio.to_thread(_do_action)
 
+    return await asyncio.to_thread(_do_action)
 
 @server.tool()
 @return_func
@@ -205,10 +184,8 @@ async def check_state(ctx: Context):
     """
     Use for full state of the environment.
     """
-    state = get_state(ctx)
     state.live_tree, state.aliases = await asyncio.to_thread(extract_live_ui_tree, state.dlg)
-    return state.live_tree
-
+    return state.live_tree if state.live_tree else "No app open or window empty"
 
 @server.tool()
 @return_func
@@ -216,7 +193,6 @@ async def check_partial_state(ctx: Context):
     """
     Use to check changes in environment. Prefer over full state.
     """
-    state = get_state(ctx)
     new_live_tree, new_aliases = await asyncio.to_thread(extract_live_ui_tree, state.dlg)
     state.aliases = new_aliases
     diff = list(dictdiffer.diff(state.live_tree, new_live_tree))
@@ -225,7 +201,7 @@ async def check_partial_state(ctx: Context):
     if len(json.dumps(diff, ensure_ascii=False)) >= len(json.dumps(state.live_tree, ensure_ascii=False)):
         return state.live_tree
     else:
-        return diff
+        return diff if diff else "No changes"
 
 if __name__ == "__main__":
     server.run(transport="streamable-http")

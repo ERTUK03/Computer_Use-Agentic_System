@@ -55,7 +55,7 @@ def load_full_model(
     toolsets = None, 
     include_prompt=True
 ):
-    model, settings, prompt = load_model(model_name)
+    model, settings, prompt = load_model(model_name, include_prompt)
     
     agent = Agent(
         model,

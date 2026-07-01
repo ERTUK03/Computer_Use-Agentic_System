@@ -3,7 +3,7 @@ import asyncio
 from .client import Client
 import json
 
-client = Client()
+client = Client(logging=True)
 
 with gr.Blocks() as demo:
     gr.Markdown("# WebSocket Client")

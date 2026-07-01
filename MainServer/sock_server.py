@@ -5,9 +5,28 @@ from aiohttp import web
 import aiohttp
 from dotenv import load_dotenv
 from pathlib import Path
-import os, re, json, asyncio
+import os, re, json, asyncio, base64
 import importlib
 import aiosqlite
+from pydantic_ai import BinaryContent, ImageUrl, AudioUrl, DocumentUrl
+
+
+def _json_default(obj):
+    """Fallback encoder for pydantic_ai content types that aren't natively
+    JSON-serializable (e.g. BinaryContent holds raw bytes)."""
+    if isinstance(obj, BinaryContent):
+        return {
+            "type": "binary_content",
+            "media_type": obj.media_type,
+            "data_base64": base64.b64encode(obj.data).decode("ascii"),
+        }
+    if isinstance(obj, (ImageUrl, AudioUrl, DocumentUrl)):
+        return {
+            "type": obj.__class__.__name__,
+            "url": obj.url,
+        }
+    # Last resort: never let a stray object crash the send
+    return str(obj)
 
 BASE_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
 env_path = BASE_DIR / "config.env"
@@ -148,7 +167,7 @@ class WSConnection:
             "msg_type": message_type,
             "msg_content": message_content
         }
-        await self.ws.send_str(json.dumps(message))
+        await self.ws.send_str(json.dumps(message, default=_json_default))
 
     async def send_error(self, error):
         await self.send_message("Error", error)
